@@ -4,7 +4,7 @@ import { AuroraBackground } from "../components/ui/aurora-background";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, Calendar, Edit, Clock } from "lucide-react";
+import { ChevronLeft, Calendar, Save } from "lucide-react";
 import { RecordingButton } from "../components/ui/recording-button";
 
 // Define the prompts for reflection
@@ -14,78 +14,19 @@ const reflectionPrompts = [
   "What can you do differently tomorrow?"
 ];
 
-// Mock data for past recordings
-const mockRecordings: { [date: string]: any } = {
-  "2023-06-15": {
-    summary: "Had a productive day working on the project. Made good progress on the frontend components and fixed several bugs. Also had a helpful meeting with the team to discuss next steps.",
-    transcription: "Today was pretty good. I spent most of the morning working on those frontend components we talked about yesterday. Got through most of the list and fixed a couple of bugs that had been bothering me. The team meeting in the afternoon was helpful - we clarified the roadmap for the next sprint and I got some good feedback on my work. I also helped Alex with his React issue, which didn't take too long but I think he appreciated it. Tomorrow I should focus more on the API integration and maybe spend a bit less time perfecting the UI details before the core functionality is working.",
-    mood: 4,
-    tasks: [
-      "Focus on API integration",
-      "Complete the authentication flow",
-      "Review pull requests"
-    ],
-    people: [
-      "Alex",
-      "Team"
-    ]
-  }
-};
-
-interface PageProps {
-  searchParams: { date?: string };
-}
-
-export default function DayPage({ searchParams }: PageProps) {
-  const [isToday, setIsToday] = useState(false);
+export default function TodayPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [currentPromptIndex, setCurrentPromptIndex] = useState(0);
   const [recordingComplete, setRecordingComplete] = useState(false);
   const [summary, setSummary] = useState("");
   const [transcription, setTranscription] = useState("");
-  const [mood, setMood] = useState(3);
+  const [mood, setMood] = useState(4); // 1-5 scale
   const [tasks, setTasks] = useState<string[]>([]);
   const [people, setPeople] = useState<string[]>([]);
-  const [date, setDate] = useState<Date>(new Date());
-  const [hasRecording, setHasRecording] = useState(false);
 
-  // Parse the date from URL params
+  // Simulate recording process
   useEffect(() => {
-    if (searchParams.date) {
-      const paramDate = new Date(searchParams.date);
-      setDate(paramDate);
-      
-      // Check if the date is today
-      const today = new Date();
-      const isDateToday = paramDate.getDate() === today.getDate() &&
-                          paramDate.getMonth() === today.getMonth() &&
-                          paramDate.getFullYear() === today.getFullYear();
-      setIsToday(isDateToday);
-      
-      // Check if we have a recording for this date
-      const dateString = searchParams.date;
-      if (mockRecordings[dateString]) {
-        setRecordingComplete(true);
-        setSummary(mockRecordings[dateString].summary);
-        setTranscription(mockRecordings[dateString].transcription);
-        setMood(mockRecordings[dateString].mood);
-        setTasks(mockRecordings[dateString].tasks);
-        setPeople(mockRecordings[dateString].people);
-        setHasRecording(true);
-      } else {
-        setRecordingComplete(false);
-        setHasRecording(false);
-      }
-    } else {
-      // If no date provided, default to today
-      setDate(new Date());
-      setIsToday(true);
-    }
-  }, [searchParams.date]);
-
-  // Simulate recording process (only for today)
-  useEffect(() => {
-    if (isRecording && isToday) {
+    if (isRecording) {
       const timer = setTimeout(() => {
         if (currentPromptIndex < reflectionPrompts.length - 1) {
           setCurrentPromptIndex(currentPromptIndex + 1);
@@ -93,7 +34,6 @@ export default function DayPage({ searchParams }: PageProps) {
           // Simulate recording completion
           setIsRecording(false);
           setRecordingComplete(true);
-          setHasRecording(true);
           
           // Simulate generated summary and extracted information
           setSummary("Today was quite productive. I made significant progress on the voice journaling app, particularly the UI components. The aurora background effect turned out really well, and I'm pleased with how the recording button works. I also helped a colleague debug an issue they were having with React state management. Tomorrow I should focus more on the backend integration and perhaps spend less time perfecting small UI details.");
@@ -114,18 +54,16 @@ export default function DayPage({ searchParams }: PageProps) {
       
       return () => clearTimeout(timer);
     }
-  }, [isRecording, currentPromptIndex, isToday]);
+  }, [isRecording, currentPromptIndex]);
 
   const handleStartRecording = () => {
-    if (isToday) {
-      setIsRecording(true);
-      setCurrentPromptIndex(0);
-      setRecordingComplete(false);
-      setSummary("");
-      setTranscription("");
-      setTasks([]);
-      setPeople([]);
-    }
+    setIsRecording(true);
+    setCurrentPromptIndex(0);
+    setRecordingComplete(false);
+    setSummary("");
+    setTranscription("");
+    setTasks([]);
+    setPeople([]);
   };
 
   const handleStopRecording = () => {
@@ -143,7 +81,7 @@ export default function DayPage({ searchParams }: PageProps) {
 
   return (
     <AuroraBackground>
-      <div className="flex flex-col min-h-screen p-4 pt-8">
+      <div className="flex flex-col min-h-screen p-4 pt-8 pb-24">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -152,37 +90,27 @@ export default function DayPage({ searchParams }: PageProps) {
         >
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
-            <Link href="/calendar">
+            <Link href="/landing">
               <button className="bg-black/40 hover:bg-black/50 text-white rounded-full px-4 py-2 flex items-center space-x-2 transition-all">
                 <ChevronLeft size={16} />
-                <span>Back to Calendar</span>
+                <span>Back</span>
               </button>
             </Link>
             <h1 className="text-2xl md:text-4xl font-bold text-white text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
-              {isToday ? "Today's Journal" : "Journal Entry"}
+              Today's Journal
             </h1>
-            {isToday ? (
-              <Link href="/calendar">
-                <button className="bg-black/40 hover:bg-black/50 text-white rounded-full px-4 py-2 flex items-center space-x-2 transition-all">
-                  <Calendar size={16} />
-                  <span>Calendar</span>
-                </button>
-              </Link>
-            ) : (
-              <div className="w-[140px]"></div> // Spacer for alignment
-            )}
+            <Link href="/calendar">
+              <button className="bg-black/40 hover:bg-black/50 text-white rounded-full px-4 py-2 flex items-center space-x-2 transition-all">
+                <Calendar size={16} />
+                <span>Calendar</span>
+              </button>
+            </Link>
           </div>
 
-          <div className="text-center mb-6 flex items-center justify-center">
+          <div className="text-center mb-6">
             <h2 className="text-xl text-white/90 drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
-              {formatDate(date)}
+              {formatDate(new Date())}
             </h2>
-            {!isToday && (
-              <div className="ml-3 px-3 py-1 bg-black/30 rounded-full text-white/80 text-sm flex items-center">
-                <Clock size={14} className="mr-1" />
-                Past Entry
-              </div>
-            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -191,7 +119,7 @@ export default function DayPage({ searchParams }: PageProps) {
               {/* Prompts */}
               <div className="bg-black/40 backdrop-blur-md rounded-xl p-6 mb-8 shadow-xl border border-white/10">
                 <h3 className="text-xl font-semibold text-white mb-4 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-                  Reflection Prompts
+                  Today's Reflection Prompts
                 </h3>
                 <ul className="space-y-4">
                   {reflectionPrompts.map((prompt, index) => (
@@ -214,54 +142,26 @@ export default function DayPage({ searchParams }: PageProps) {
                 </ul>
               </div>
 
-              {/* Recording Button or Past Entry Notice */}
+              {/* Recording Button */}
               <div className="flex flex-col items-center justify-center flex-grow">
-                {isToday ? (
-                  <>
-                    <RecordingButton 
-                      onStartRecording={handleStartRecording}
-                      onStopRecording={handleStopRecording}
-                      size="lg"
-                    />
-                    <p className="text-white/80 mt-4 text-center">
-                      {isRecording 
-                        ? "Recording... Click the stop button when finished." 
-                        : recordingComplete 
-                          ? "Recording complete! See your summary on the right." 
-                          : "Click the microphone to start recording your journal entry."}
-                    </p>
-                  </>
-                ) : (
-                  <div className="bg-black/30 backdrop-blur-md rounded-xl p-6 text-center max-w-md">
-                    {hasRecording ? (
-                      <>
-                        <div className="text-white/90 mb-3">
-                          This is a past journal entry.
-                        </div>
-                        <div className="text-white/70 text-sm">
-                          Recording is only available for today's entry.
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-white/90 mb-3">
-                          No journal entry for this date.
-                        </div>
-                        <Link href="/today">
-                          <button className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full px-4 py-2 mt-2 shadow-lg font-medium">
-                            Record Today's Entry
-                          </button>
-                        </Link>
-                      </>
-                    )}
-                  </div>
-                )}
+                <RecordingButton 
+                  onStartRecording={handleStartRecording}
+                  onStopRecording={handleStopRecording}
+                  size="lg"
+                />
+                <p className="text-white/80 mt-4 text-center">
+                  {isRecording 
+                    ? "Recording... Click the stop button when finished." 
+                    : recordingComplete 
+                      ? "Recording complete! See your summary on the right." 
+                      : "Click the microphone to start recording your journal entry."}
+                </p>
               </div>
             </div>
 
             {/* Right side - Summary and Extracted Information */}
             <div className="flex flex-col">
-              {recordingComplete || hasRecording ? (
+              {recordingComplete ? (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -269,17 +169,9 @@ export default function DayPage({ searchParams }: PageProps) {
                 >
                   {/* Summary */}
                   <div className="bg-black/40 backdrop-blur-md rounded-xl p-6 mb-6 shadow-xl border border-white/10">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-xl font-semibold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
-                        Summary
-                      </h3>
-                      {isToday && (
-                        <button className="text-white/70 hover:text-white flex items-center text-sm">
-                          <Edit size={14} className="mr-1" />
-                          Edit
-                        </button>
-                      )}
-                    </div>
+                    <h3 className="text-xl font-semibold text-white mb-4 drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]">
+                      Summary
+                    </h3>
                     <p className="text-white/90 leading-relaxed">
                       {summary}
                     </p>
@@ -303,8 +195,7 @@ export default function DayPage({ searchParams }: PageProps) {
                                 ? 'bg-indigo-500 text-white' 
                                 : 'bg-black/20 text-white/60'
                             }`}
-                            onClick={isToday ? () => setMood(value) : undefined}
-                            disabled={!isToday}
+                            onClick={() => setMood(value)}
                           >
                             {value}
                           </button>
@@ -352,14 +243,20 @@ export default function DayPage({ searchParams }: PageProps) {
                       </p>
                     </details>
                   </div>
+                  
+                  {/* Save Button */}
+                  <div className="mt-6 text-center">
+                    <button className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full px-6 py-3 shadow-lg font-medium flex items-center justify-center mx-auto">
+                      <Save size={18} className="mr-2" />
+                      Save Journal Entry
+                    </button>
+                  </div>
                 </motion.div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full">
                   <div className="bg-black/20 backdrop-blur-md rounded-xl p-8 text-center max-w-md">
                     <p className="text-white/70 text-lg">
-                      {isToday 
-                        ? "Your journal summary and insights will appear here after you complete your recording."
-                        : "No journal entry found for this date."}
+                      Your journal summary and insights will appear here after you complete your recording.
                     </p>
                   </div>
                 </div>
@@ -370,4 +267,4 @@ export default function DayPage({ searchParams }: PageProps) {
       </div>
     </AuroraBackground>
   );
-}
+} 

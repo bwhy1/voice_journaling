@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { format, parse, isValid } from 'date-fns';
+import { format, parse, isValid, isToday } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { JournalEntry } from '@/lib/supabase';
 import VoiceRecorder from '../components/VoiceRecorder';
 import JournalEntryDisplay from '../components/JournalEntryDisplay';
-import { ChevronLeft, Plus } from 'lucide-react';
+import { ChevronLeft, Plus, X } from 'lucide-react';
 
 export default function DayPage() {
   const searchParams = useSearchParams();
@@ -26,6 +26,12 @@ export default function DayPage() {
   };
 
   const displayDate = formatDisplayDate(date);
+
+  // Check if the current date is today
+  const isCurrentDateToday = () => {
+    const parsedDate = parse(date, 'yyyy-MM-dd', new Date());
+    return isValid(parsedDate) && isToday(parsedDate);
+  };
 
   // Fetch entry for the given date
   useEffect(() => {
@@ -56,6 +62,11 @@ export default function DayPage() {
         }
 
         setEntry(data as JournalEntry);
+
+        // If it's today and there's no entry, show the recorder automatically
+        if (isCurrentDateToday() && !data) {
+          setShowRecorder(true);
+        }
       } catch (error) {
         console.error('Error fetching journal entry:', error);
       } finally {
@@ -106,37 +117,40 @@ export default function DayPage() {
   };
 
   return (
-    <div className='container mx-auto px-4 py-8'>
-      <div className='flex flex-col gap-6'>
-        <div className='flex justify-between items-center'>
-          <Link href='/' className='inline-flex items-center text-blue-600 hover:text-blue-800'>
-            <ChevronLeft size={16} />
-            <span className='ml-1'>Back to Home</span>
-          </Link>
+    <div className='flex flex-col min-h-screen bg-white dark:bg-gray-900'>
+      {/* Header */}
+      <header className='sticky top-0 z-10 bg-white dark:bg-gray-900 border-b dark:border-gray-800 p-4 flex justify-between items-center'>
+        <Link href='/' className='inline-flex items-center text-blue-600 hover:text-blue-800'>
+          <ChevronLeft size={16} />
+          <span className='ml-1'>Home</span>
+        </Link>
 
-          <h1 className='text-2xl font-bold text-center'>Journal for {displayDate}</h1>
+        <h1 className='text-lg font-semibold text-center flex-1 mx-2 truncate'>{displayDate}</h1>
 
+        {entry && (
           <button
             onClick={() => setShowRecorder(!showRecorder)}
-            className='inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500'
+            className='inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400'
+            aria-label={showRecorder ? 'Cancel recording' : 'New recording'}
           >
-            {!showRecorder ? (
-              <>
-                <Plus size={16} className='mr-1' />
-                {entry ? 'New Recording' : 'Add Entry'}
-              </>
-            ) : (
-              'Cancel'
-            )}
+            {showRecorder ? <X size={16} /> : <Plus size={16} />}
           </button>
-        </div>
+        )}
 
+        {/* Spacer when there's no entry, to keep the header balanced */}
+        {!entry && <div className='w-8' />}
+      </header>
+
+      {/* Main content */}
+      <main className='flex-1 p-4'>
         {showRecorder ? (
-          <VoiceRecorder date={displayDate} onSave={handleSaveEntry} />
+          <div className='flex flex-col h-[calc(100vh-8rem)]'>
+            <VoiceRecorder date={displayDate} onSave={handleSaveEntry} />
+          </div>
         ) : (
           <JournalEntryDisplay entry={entry} date={displayDate} isLoading={isLoading} />
         )}
-      </div>
+      </main>
     </div>
   );
 }

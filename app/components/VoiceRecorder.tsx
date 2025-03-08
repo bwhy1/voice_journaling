@@ -68,64 +68,78 @@ export default function VoiceRecorder({ date, onSave }: VoiceRecorderProps) {
   }, [mediaBlobUrl, status]);
 
   return (
-    <div className='p-6 border rounded-lg shadow-sm w-full max-w-3xl'>
-      <div className='flex flex-col gap-4'>
-        <h2 className='text-xl font-semibold'>Voice Journal for {date}</h2>
+    <div className='flex flex-col w-full h-full'>
+      {/* Date header */}
+      <h2 className='text-xl font-semibold text-center mb-4'>Voice Journal for {date}</h2>
 
-        <div className='flex gap-3'>
+      {/* Main recording interface */}
+      <div className='flex flex-col items-center justify-center flex-grow'>
+        {/* Recording status */}
+        <div className='text-sm text-gray-500 mb-4 text-center'>
+          {isRecording ? (
+            <div className='text-red-500 font-medium animate-pulse'>Recording...</div>
+          ) : (
+            <div>{status === 'stopped' ? 'Recording complete' : 'Ready to record'}</div>
+          )}
+        </div>
+
+        {/* Main recording button */}
+        <div className='mb-8'>
           {!isRecording ? (
             <button
               onClick={handleStartRecording}
-              className='flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors'
+              className='flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-red-300'
               disabled={isSaving}
+              aria-label='Start recording'
             >
-              <Mic size={18} />
-              Start Recording
+              <Mic size={32} />
             </button>
           ) : (
             <button
               onClick={handleStopRecording}
-              className='flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors'
+              className='flex items-center justify-center w-20 h-20 sm:w-24 sm:h-24 bg-gray-800 hover:bg-gray-900 text-white rounded-full shadow-lg transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-500'
+              aria-label='Stop recording'
             >
-              <Square size={18} />
-              Stop Recording
+              <Square size={24} />
             </button>
           )}
-
-          <button
-            onClick={handleSaveEntry}
-            className='flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors'
-            disabled={isRecording || !transcript || isSaving}
-          >
-            <Save size={18} />
-            Save Entry
-          </button>
         </div>
+      </div>
 
-        <div className='mt-2'>
-          <div className='text-sm text-gray-500'>
-            Status: {isRecording ? 'Recording...' : status}
+      {/* Recording results */}
+      <div className='mt-6 px-4'>
+        {mediaBlobUrl && (
+          <div className='mb-6'>
+            <p className='mb-2 text-sm font-medium text-center'>Listen to your recording:</p>
+            <audio src={mediaBlobUrl} controls className='w-full max-w-md mx-auto' />
           </div>
-          {mediaBlobUrl && (
-            <div className='mt-3'>
-              <p className='mb-2 text-sm font-medium'>Listen to your recording:</p>
-              <audio src={mediaBlobUrl} controls className='w-full' />
-            </div>
-          )}
-        </div>
+        )}
 
         {transcript && (
-          <div className='mt-4'>
-            <h3 className='text-md font-semibold mb-2'>Transcript:</h3>
-            <div className='p-3 bg-gray-50 dark:bg-gray-800 rounded-md min-h-[100px]'>
+          <div className='mb-6'>
+            <h3 className='text-md font-semibold mb-2 text-center'>What I heard:</h3>
+            <div className='p-4 bg-gray-50 dark:bg-gray-800 rounded-md min-h-[100px] max-w-lg mx-auto'>
               {transcript}
             </div>
           </div>
         )}
 
+        {transcript && (
+          <div className='flex justify-center mt-6 mb-8'>
+            <button
+              onClick={handleSaveEntry}
+              className='flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-full hover:bg-green-600 transition-colors focus:outline-none focus:ring-4 focus:ring-green-300'
+              disabled={isRecording || !transcript || isSaving}
+            >
+              <Save size={18} />
+              Save Journal Entry
+            </button>
+          </div>
+        )}
+
         {savedStatus && (
           <div
-            className={`mt-3 p-2 rounded-md text-sm ${
+            className={`mt-3 p-2 rounded-md text-sm max-w-md mx-auto text-center ${
               savedStatus.includes('success')
                 ? 'bg-green-100 text-green-800'
                 : 'bg-red-100 text-red-800'

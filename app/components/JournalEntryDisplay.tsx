@@ -12,13 +12,13 @@ interface JournalEntryDisplayProps {
 export default function JournalEntryDisplay({ entry, date, isLoading }: JournalEntryDisplayProps) {
   if (isLoading) {
     return (
-      <div className='p-6 border rounded-lg shadow-sm w-full max-w-3xl animate-pulse'>
-        <div className='h-6 bg-gray-200 rounded w-1/2 mb-4'></div>
-        <div className='h-4 bg-gray-200 rounded w-1/4 mb-3'></div>
-        <div className='space-y-2'>
-          <div className='h-4 bg-gray-200 rounded w-full'></div>
-          <div className='h-4 bg-gray-200 rounded w-full'></div>
-          <div className='h-4 bg-gray-200 rounded w-3/4'></div>
+      <div className='w-full animate-pulse'>
+        <div className='h-6 bg-gray-200 dark:bg-gray-700 rounded w-3/4 mx-auto mb-4'></div>
+        <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mx-auto mb-6'></div>
+        <div className='space-y-3 max-w-md mx-auto'>
+          <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-full'></div>
+          <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-full'></div>
+          <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4'></div>
         </div>
       </div>
     );
@@ -26,10 +26,14 @@ export default function JournalEntryDisplay({ entry, date, isLoading }: JournalE
 
   if (!entry) {
     return (
-      <div className='p-6 border rounded-lg shadow-sm w-full max-w-3xl'>
-        <h2 className='text-xl font-semibold mb-4'>Journal Entry for {date}</h2>
-        <p className='text-gray-500'>
-          No journal entry found for this date. Record one to get started!
+      <div className='flex flex-col items-center justify-center h-[calc(100vh-12rem)] text-center p-4'>
+        <div className='bg-gray-100 dark:bg-gray-800 rounded-full p-6 mb-4'>
+          <Calendar size={32} className='text-gray-400' />
+        </div>
+        <h2 className='text-xl font-semibold mb-2'>No Journal Entry Yet</h2>
+        <p className='text-gray-500 max-w-xs'>
+          You haven&apos;t created a journal entry for {date}. Tap the + button to start recording
+          your thoughts.
         </p>
       </div>
     );
@@ -40,27 +44,25 @@ export default function JournalEntryDisplay({ entry, date, isLoading }: JournalE
   const formattedCreatedTime = createdDate.toLocaleTimeString();
 
   return (
-    <div className='p-6 border rounded-lg shadow-sm w-full max-w-3xl'>
-      <h2 className='text-xl font-semibold mb-2'>Journal Entry for {date}</h2>
-
-      <div className='flex items-center gap-4 mb-4 text-sm text-gray-500'>
+    <div className='max-w-md mx-auto'>
+      <div className='flex items-center justify-center gap-4 mb-6 text-sm text-gray-500'>
         <div className='flex items-center'>
-          <Calendar size={16} className='mr-1' />
+          <Calendar size={14} className='mr-1' />
           <span>{formattedCreatedDate}</span>
         </div>
         <div className='flex items-center'>
-          <Clock size={16} className='mr-1' />
+          <Clock size={14} className='mr-1' />
           <span>{formattedCreatedTime}</span>
         </div>
       </div>
 
       <div className='prose dark:prose-invert max-w-none'>
-        <p>{entry.content}</p>
+        <p className='leading-relaxed text-lg'>{entry.content}</p>
       </div>
 
       {entry.audio_url && (
-        <div className='mt-4'>
-          <h3 className='text-md font-medium mb-2'>Original Recording:</h3>
+        <div className='mt-8'>
+          <h3 className='text-md font-medium mb-2 text-center'>Your Recording</h3>
           <audio src={entry.audio_url} controls className='w-full' />
         </div>
       )}

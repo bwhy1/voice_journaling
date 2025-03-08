@@ -30,15 +30,15 @@ export default function Home() {
               </Link>
 
               <Link
-                href='/day'
+                href='/calendar'
                 className='flex items-center gap-3 p-4 border rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors'
               >
                 <div className='p-3 bg-purple-100 dark:bg-purple-900 rounded-full'>
                   <Book size={24} className='text-purple-600 dark:text-purple-400' />
                 </div>
                 <div>
-                  <h3 className='font-medium'>View Journal Entries</h3>
-                  <p className='text-sm text-gray-500'>Browse your past entries</p>
+                  <h3 className='font-medium'>Browse Journal Calendar</h3>
+                  <p className='text-sm text-gray-500'>View entries day by day</p>
                 </div>
               </Link>
             </div>

@@ -5,23 +5,65 @@ import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import { Mic, Square } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { RecordingButton } from "../components/ui/recording-button";
+import {
+  initializeRetellClient,
+  startRetellCall,
+  stopRetellCall,
+  SETUP_AGENT_ID,
+  RetellUpdate,
+} from "@/lib/retell";
 
 export default function SetupPage() {
+  const router = useRouter();
   const [step, setStep] = useState(1);
   const [isRecording, setIsRecording] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [transcript, setTranscript] = useState("");
+  const [isCalling, setIsCalling] = useState(false);
+  const [callId, setCallId] = useState<string | null>(null);
 
-  // Simulate conversation flow
+  // Initialize Retell client
   useEffect(() => {
-    if (isRecording && step === 2) {
-      const timer = setTimeout(() => {
+    initializeRetellClient(
+      // Call started
+      () => setIsCalling(true),
+      // Call ended
+      () => {
+        setIsCalling(false);
         setIsRecording(false);
-        setStep(3);
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [isRecording, step]);
+        if (step < 3) {
+          setStep(prev => prev + 1);
+        }
+      },
+      // Agent start talking
+      () => {},
+      // Agent stop talking
+      () => {},
+      // Updates (including transcript)
+      (update: RetellUpdate) => {
+        if (update.transcript) {
+          if (typeof update.transcript === 'string') {
+            setTranscript(update.transcript);
+          }
+        }
+      },
+      // Error handling
+      (error: Error) => {
+        console.error('Retell error:', error);
+        setIsCalling(false);
+        setIsRecording(false);
+      }
+    );
+
+    // Cleanup on unmount
+    return () => {
+      if (isCalling) {
+        stopRetellCall();
+      }
+    };
+  }, [isCalling, step]);
 
   // Simulate progress for final step
   useEffect(() => {
@@ -39,21 +81,44 @@ export default function SetupPage() {
     }
   }, [step]);
 
-  const handleStartRecording = () => {
+  useEffect(() => {
+    if (step === 3 && progress === 100) {
+      console.log("Ready for journaling - button should be visible");
+    }
+  }, [step, progress]);
+
+  const handleStartRecording = async () => {
     setIsRecording(true);
-    if (step === 1) {
-      setTimeout(() => {
-        setIsRecording(false);
-        setStep(2);
-      }, 3000);
+    setTranscript(""); // Clear previous transcript
+    
+    // Start Retell call with appropriate metadata based on step
+    const metadata = {
+      step,
+      context: step === 1 ? 'initial_setup' : 'journaling_goals',
+    };
+
+    const result = await startRetellCall(SETUP_AGENT_ID, metadata);
+    
+    if (!result.success) {
+      console.error('Failed to start Retell call');
+      setIsRecording(false);
+      return;
+    }
+
+    if (result.call_id) {
+      setCallId(result.call_id);
+      localStorage.setItem('setupCallId', result.call_id);
     }
   };
 
   const handleStopRecording = () => {
     setIsRecording(false);
-    if (step === 2) {
-      setStep(3);
-    }
+    stopRetellCall();
+  };
+
+  const handleStartJournaling = () => {
+    console.log("Button clicked - handleStartJournaling");
+    window.location.href = '/record';
   };
 
   return (
@@ -77,6 +142,15 @@ export default function SetupPage() {
               <p className="text-white text-lg drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
                 Let's set up your personalized journaling experience. I'll ask you a few questions to understand your goals.
               </p>
+              {transcript && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-lg shadow-lg"
+                >
+                  <p className="text-white/90 text-left whitespace-pre-wrap">{transcript}</p>
+                </motion.div>
+              )}
             </motion.div>
           )}
 
@@ -100,6 +174,15 @@ export default function SetupPage() {
                 <p className="text-white/90 text-sm mt-4 bg-black/30 p-3 rounded-lg shadow-inner">
                   Click the microphone button to record your answer.
                 </p>
+              )}
+              {transcript && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-6 p-4 bg-white/10 backdrop-blur-sm rounded-lg shadow-lg"
+                >
+                  <p className="text-white/90 text-left whitespace-pre-wrap">{transcript}</p>
+                </motion.div>
               )}
             </motion.div>
           )}
@@ -133,11 +216,13 @@ export default function SetupPage() {
                   transition={{ delay: 0.5 }}
                   className="mt-6"
                 >
-                  <Link href="/day">
-                    <button className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full shadow-lg font-medium">
-                      Start Journaling
-                    </button>
-                  </Link>
+                  <button
+                    onClick={handleStartJournaling}
+                    type="button"
+                    className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full shadow-lg font-medium hover:opacity-90 active:opacity-100 transition-opacity cursor-pointer z-50"
+                  >
+                    Start Journaling
+                  </button>
                 </motion.div>
               )}
             </motion.div>

@@ -29,16 +29,19 @@ export function Button({
   className?: string;
   [key: string]: any;
 }) {
+  // Extract custom props to prevent them from being passed to DOM elements
+  const { containerClassName: _, borderClassName: __, duration: ___, ...domProps } = otherProps;
+
   return (
     <Component
       className={cn(
-        "bg-transparent relative text-xl p-[1px] overflow-hidden",
+        "bg-transparent relative text-xl h-16 w-40 p-[1px] overflow-hidden",
         containerClassName
       )}
       style={{
         borderRadius: borderRadius,
       }}
-      {...otherProps}
+      {...domProps}
     >
       <div
         className="absolute inset-0"
@@ -56,7 +59,7 @@ export function Button({
 
       <div
         className={cn(
-          "relative bg-transparent backdrop-blur-sm text-white flex items-center justify-center w-full h-full text-sm antialiased",
+          "relative bg-slate-900/[0.8] border border-slate-800 backdrop-blur-xl text-white flex items-center justify-center w-full h-full text-sm antialiased",
           className
         )}
         style={{
@@ -82,8 +85,11 @@ export const MovingBorder = ({
   ry?: string;
   [key: string]: any;
 }) => {
-  const pathRef = useRef<SVGRectElement>(null);
+  const pathRef = useRef<any>();
   const progress = useMotionValue<number>(0);
+
+  // Extract any custom props to prevent them from being passed to DOM elements
+  const { containerClassName, borderClassName, ...domProps } = otherProps;
 
   useAnimationFrame((time: number) => {
     const length = pathRef.current?.getTotalLength();
@@ -112,7 +118,7 @@ export const MovingBorder = ({
         className="absolute h-full w-full"
         width="100%"
         height="100%"
-        {...otherProps}
+        {...domProps}
       >
         <rect
           fill="none"

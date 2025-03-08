@@ -160,3 +160,71 @@
 .animate-aurora {
   animation: aurora 15s ease infinite;
 }
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+  --white: rgba(255, 255, 255, 0.8);
+  --black: rgba(0, 0, 0, 0.8);
+  --transparent: rgba(0, 0, 0, 0);
+  --sky-500: rgba(14, 165, 233, 0.7);
+  --indigo-500: rgba(99, 102, 241, 0.7);
+  --indigo-300: rgba(165, 180, 252, 0.7);
+  --blue-500: rgba(59, 130, 246, 0.7);
+  --blue-400: rgba(96, 165, 250, 0.7);
+  --blue-300: rgba(147, 197, 253, 0.7);
+  --violet-200: rgba(221, 214, 254, 0.7);
+  --amber-500: rgba(245, 158, 11, 0.7);
+  --red-500: rgba(239, 68, 68, 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 255, 255, 255;
+    --background-start-rgb: 0, 0, 0;
+    --background-end-rgb: 0, 0, 0;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@keyframes aurora {
+  0% {
+    background-position: 0% 0%, 0% 0%;
+  }
+  25% {
+    background-position: 50% 25%, 25% 25%;
+  }
+  50% {
+    background-position: 100% 50%, 50% 50%;
+  }
+  75% {
+    background-position: 50% 75%, 75% 75%;
+  }
+  100% {
+    background-position: 0% 100%, 100% 100%;
+  }
+}
+
+.animate-aurora {
+  animation: aurora 15s linear infinite;
+}

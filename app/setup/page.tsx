@@ -1,160 +1,157 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
-import { AuroraBackground } from "@/app/components/ui/aurora-background";
-import { RecordingButton } from "@/app/components/ui/recording-button";
-import { motion, AnimatePresence } from "framer-motion";
-import { useRouter } from "next/navigation";
+import { AuroraBackground } from "../components/ui/aurora-background";
+import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { Mic, Square } from "lucide-react";
+import Link from "next/link";
+import { RecordingButton } from "../components/ui/recording-button";
 
 export default function SetupPage() {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(1);
   const [isRecording, setIsRecording] = useState(false);
-  const [welcomePlayed, setWelcomePlayed] = useState(false);
-  const [userResponse, setUserResponse] = useState("");
-  const router = useRouter();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [progress, setProgress] = useState(0);
 
-  // Simulated conversation flow
-  const conversationSteps = [
-    {
-      message: "Welcome to Voice Journaling! I'm here to help you set up your personalized journaling experience.",
-      audio: "/welcome.mp3" // This would be a pre-recorded welcome message
-    },
-    {
-      message: "What are your main goals for journaling? For example, self-reflection, tracking mood, or documenting memories?",
-      audio: "/goals.mp3"
-    },
-    {
-      message: "Great! Based on your goals, I'll customize your daily prompts to help you get the most out of your journaling experience.",
-      audio: "/confirmation.mp3"
-    }
-  ];
-
+  // Simulate conversation flow
   useEffect(() => {
-    // Simulate audio playing when the component mounts
-    if (step === 0 && !welcomePlayed) {
+    if (isRecording && step === 2) {
       const timer = setTimeout(() => {
-        setWelcomePlayed(true);
-      }, 2000);
+        setIsRecording(false);
+        setStep(3);
+      }, 5000);
       return () => clearTimeout(timer);
     }
-  }, [step, welcomePlayed]);
+  }, [isRecording, step]);
 
+  // Simulate progress for final step
   useEffect(() => {
-    // Move to the next step after welcome is played
-    if (step === 0 && welcomePlayed) {
-      const timer = setTimeout(() => {
-        setStep(1);
-      }, 1000);
-      return () => clearTimeout(timer);
+    if (step === 3) {
+      const interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return prev + 10;
+        });
+      }, 500);
+      return () => clearInterval(interval);
     }
-  }, [welcomePlayed, step]);
+  }, [step]);
 
   const handleStartRecording = () => {
     setIsRecording(true);
-    // In a real app, this would start the actual recording
+    if (step === 1) {
+      setTimeout(() => {
+        setIsRecording(false);
+        setStep(2);
+      }, 3000);
+    }
   };
 
   const handleStopRecording = () => {
     setIsRecording(false);
-    
-    // Simulate processing the user's response
-    if (step === 1) {
-      // In a real app, this would process the speech to text
-      setUserResponse("I want to track my daily thoughts and reflect on my personal growth.");
-      
-      // Move to the next step after a delay
-      setTimeout(() => {
-        setStep(2);
-      }, 1500);
-      
-      // In a real app, this would save the user's preferences
-      setTimeout(() => {
-        router.push("/day");
-      }, 5000);
+    if (step === 2) {
+      setStep(3);
     }
   };
 
   return (
     <AuroraBackground>
       <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <AnimatePresence mode="wait">
-          {step < conversationSteps.length && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="max-w-md w-full mx-auto text-center mb-8"
+        >
+          {step === 1 && (
             <motion.div
-              key={`message-${step}`}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.5 }}
-              className="text-center mb-12 max-w-xl"
+              className="space-y-4"
             >
-              <h2 className="text-2xl md:text-3xl font-light dark:text-white mb-4">
-                {conversationSteps[step].message}
-              </h2>
+              <h1 className="text-2xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
+                Welcome to Voice Journaling
+              </h1>
+              <p className="text-white text-lg drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                Let's set up your personalized journaling experience. I'll ask you a few questions to understand your goals.
+              </p>
+            </motion.div>
+          )}
+
+          {step === 2 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <h1 className="text-2xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
+                What are your journaling goals?
+              </h1>
+              <p className="text-white text-lg drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                Are you looking to track your mood, capture memories, or develop self-awareness?
+              </p>
+              {isRecording ? (
+                <p className="text-white/90 text-sm mt-4 bg-black/30 p-3 rounded-lg shadow-inner animate-pulse">
+                  Listening... Click the stop button when finished.
+                </p>
+              ) : (
+                <p className="text-white/90 text-sm mt-4 bg-black/30 p-3 rounded-lg shadow-inner">
+                  Click the microphone button to record your answer.
+                </p>
+              )}
+            </motion.div>
+          )}
+
+          {step === 3 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              <h1 className="text-2xl font-bold text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
+                Perfect! Setting up your experience
+              </h1>
+              <p className="text-white text-lg drop-shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
+                Based on your goals, I'm personalizing your daily prompts and journaling experience.
+              </p>
               
-              {step === 1 && userResponse && (
+              <div className="w-full bg-black/30 h-2 rounded-full overflow-hidden mt-6">
+                <motion.div 
+                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-600"
+                  initial={{ width: "0%" }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.5 }}
+                />
+              </div>
+              
+              {progress === 100 && (
                 <motion.div
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  className="mt-4 p-3 bg-white/10 dark:bg-black/10 backdrop-blur-sm rounded-lg"
+                  transition={{ delay: 0.5 }}
+                  className="mt-6"
                 >
-                  <p className="text-lg italic">"{userResponse}"</p>
+                  <Link href="/day">
+                    <button className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-full shadow-lg font-medium">
+                      Start Journaling
+                    </button>
+                  </Link>
                 </motion.div>
               )}
             </motion.div>
           )}
-        </AnimatePresence>
-
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ 
-            type: "spring", 
-            stiffness: 260, 
-            damping: 20,
-            delay: 0.3 
-          }}
-          className="relative"
-        >
-          <RecordingButton
-            size="lg"
-            onStartRecording={handleStartRecording}
-            onStopRecording={handleStopRecording}
-          />
-          
-          {step === 0 && !welcomePlayed && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="absolute -top-16 left-1/2 transform -translate-x-1/2 whitespace-nowrap"
-            >
-              <p className="text-sm text-white/70">Tap to begin</p>
-            </motion.div>
-          )}
         </motion.div>
-        
-        {step === 2 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 1 }}
-            className="mt-12 text-center"
-          >
-            <p className="text-lg dark:text-white/70">
-              Setting up your personalized experience...
-            </p>
-            <div className="mt-4 flex justify-center">
-              <div className="w-16 h-1 bg-white/20 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-white"
-                  initial={{ width: 0 }}
-                  animate={{ width: "100%" }}
-                  transition={{ duration: 3 }}
-                />
-              </div>
-            </div>
-          </motion.div>
+
+        {step < 3 && (
+          <div className="relative">
+            <RecordingButton 
+              onStartRecording={handleStartRecording}
+              onStopRecording={handleStopRecording}
+              size="lg"
+            />
+          </div>
         )}
       </div>
     </AuroraBackground>

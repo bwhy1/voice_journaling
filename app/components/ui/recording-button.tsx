@@ -26,6 +26,7 @@ export function RecordingButton({
   const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = () => {
+    console.log("Button clicked, current state:", { isRecording, isPaused });
     if (isRecording) {
       if (isPaused) {
         setIsPaused(false);
@@ -41,6 +42,7 @@ export function RecordingButton({
   };
 
   const handleStop = (e: React.MouseEvent) => {
+    console.log("Stop button clicked");
     e.stopPropagation();
     setIsRecording(false);
     setIsPaused(false);

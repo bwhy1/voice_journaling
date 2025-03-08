@@ -25,6 +25,30 @@ export interface RetellMetadata {
   [key: string]: unknown;
 }
 
+export interface RetellLLMVariables {
+  [key: string]: string | number | boolean | null;
+}
+
+export interface CallDetails {
+  call_type: string;
+  access_token: string;
+  call_id: string;
+  agent_id: string;
+  call_status: string;
+  metadata: Record<string, unknown>;
+  transcript?: string;
+  retell_llm_dynamic_variables?: RetellLLMVariables;
+  call_analysis?: {
+    call_summary?: string;
+    in_voicemail?: boolean;
+    user_sentiment?: 'Positive' | 'Negative' | 'Neutral' | 'Unknown';
+    call_successful?: boolean;
+    custom_analysis_data?: Record<string, unknown>;
+  };
+  start_timestamp?: number;
+  end_timestamp?: number;
+}
+
 const client = new Retell({
   apiKey: 'YOUR_RETELL_API_KEY',
 });
@@ -32,7 +56,8 @@ const client = new Retell({
 // Register a call with Retell API via our server endpoint
 export async function registerCall(
   agentId: string,
-  userProfile?: RetellMetadata
+  metadata?: RetellMetadata,
+  llmVariables: RetellLLMVariables = {}
 ): Promise<RetellCallResponse> {
   try {
     // Call our server endpoint which uses the Retell API
@@ -44,11 +69,8 @@ export async function registerCall(
       },
       body: JSON.stringify({
         agent_id: agentId,
-        metadata: userProfile,
-        retell_llm_dynamic_variables: {
-          user_summary: 'Lutfi is a 30-year-old software engineer living in Berlin who is interested in sports, project work, and personal well-being.',
-          user_goals_focus: 'Lutfi aims to track his sports activities, daily projects, meals, and mood to understand their correlations.',
-        }
+        metadata: metadata || {},
+        retell_llm_dynamic_variables: llmVariables
       }),
     });
 
@@ -111,9 +133,13 @@ export function initializeRetellClient(
 }
 
 // Start a call with Retell
-export async function startRetellCall(agentId: string, metadata?: RetellMetadata) {
+export async function startRetellCall(
+  agentId: string, 
+  metadata?: RetellMetadata,
+  llmVariables?: RetellLLMVariables
+) {
   try {
-    const response = await registerCall(agentId, metadata);
+    const response = await registerCall(agentId, metadata, llmVariables);
     const { access_token, call_id } = response;
 
     await retellWebClient.startCall({
@@ -130,4 +156,26 @@ export async function startRetellCall(agentId: string, metadata?: RetellMetadata
 // Stop an ongoing Retell call
 export function stopRetellCall() {
   retellWebClient.stopCall();
+}
+
+// Get call information
+export async function getCallDetails(callId: string): Promise<CallDetails | null> {
+  try {
+    const response = await fetch(`https://api.retellai.com/v2/get-call/${callId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${RETELL_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error('Error getting call details:', err);
+    return null;
+  }
 }

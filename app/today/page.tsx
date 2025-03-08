@@ -6,6 +6,14 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { ChevronLeft, Calendar, Save, BarChart3, Users, Settings } from "lucide-react";
 import { RecordingButton } from "../components/ui/recording-button";
+import {
+  initializeRetellClient,
+  startRetellCall,
+  stopRetellCall,
+  JOURNAL_AGENT_ID,
+  getCallDetails,
+  RetellUpdate,
+} from "@/lib/retell";
 
 // Define the prompts for reflection
 const reflectionPrompts = [
@@ -23,51 +31,106 @@ export default function TodayPage() {
   const [mood, setMood] = useState(4); // 1-5 scale
   const [tasks, setTasks] = useState<string[]>([]);
   const [people, setPeople] = useState<string[]>([]);
+  const [isCalling, setIsCalling] = useState(false);
+  const [setupInfo, setSetupInfo] = useState<any>(null);
 
-  // Simulate recording process
+  // Fetch setup call information when component mounts
   useEffect(() => {
-    if (isRecording) {
-      const timer = setTimeout(() => {
-        if (currentPromptIndex < reflectionPrompts.length - 1) {
-          setCurrentPromptIndex(currentPromptIndex + 1);
-        } else {
-          // Simulate recording completion
-          setIsRecording(false);
-          setRecordingComplete(true);
+    const fetchSetupInfo = async () => {
+      const setupCallId = localStorage.getItem('setupCallId');
+      if (setupCallId) {
+        try {
+          const callDetails = await getCallDetails(setupCallId);
+          console.log('Setup Call Details:', callDetails);
           
-          // Simulate generated summary and extracted information
-          setSummary("Today was quite productive. I made significant progress on the voice journaling app, particularly the UI components. The aurora background effect turned out really well, and I'm pleased with how the recording button works. I also helped a colleague debug an issue they were having with React state management. Tomorrow I should focus more on the backend integration and perhaps spend less time perfecting small UI details.");
-          
-          setTranscription("I had a good day working on the voice journaling app. The UI is coming along nicely, especially the aurora background effect that gives the app a unique feel. The recording button functionality is working well too. I spent some time helping Sarah with her React state management issue, which was a nice break from my own work. For tomorrow, I need to shift focus to the backend integration. I've been spending too much time on small UI details, so I should prioritize the core functionality first.");
-          
-          setTasks([
-            "Focus on backend integration",
-            "Prioritize core functionality",
-            "Spend less time on UI details"
-          ]);
-          
-          setPeople([
-            "Sarah"
-          ]);
+          if (callDetails?.call_analysis?.custom_analysis_data) {
+            setSetupInfo(callDetails.call_analysis.custom_analysis_data);
+          }
+        } catch (error) {
+          console.error('Error fetching setup call details:', error);
         }
-      }, 3000);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [isRecording, currentPromptIndex]);
+      }
+    };
 
-  const handleStartRecording = () => {
+    fetchSetupInfo();
+  }, []);
+
+  // Initialize Retell client
+  useEffect(() => {
+    initializeRetellClient(
+      // Call started
+      () => setIsCalling(true),
+      // Call ended
+      () => {
+        setIsCalling(false);
+        setIsRecording(false);
+        setRecordingComplete(true);
+      },
+      // Agent start talking
+      () => {},
+      // Agent stop talking
+      () => {},
+      // Updates (including transcript)
+      (update: RetellUpdate) => {
+        if (update.transcript) {
+          if (typeof update.transcript === 'string') {
+            setTranscription(update.transcript);
+          }
+        }
+      },
+      // Error handling
+      (error: Error) => {
+        console.error('Retell error:', error);
+        setIsCalling(false);
+        setIsRecording(false);
+      }
+    );
+
+    return () => {
+      if (isCalling) {
+        stopRetellCall();
+      }
+    };
+  }, []);
+
+  const handleStartRecording = async () => {
+    console.log("Starting recording...");
     setIsRecording(true);
-    setCurrentPromptIndex(0);
     setRecordingComplete(false);
     setSummary("");
     setTranscription("");
     setTasks([]);
     setPeople([]);
+
+    // Prepare metadata
+    const metadata = {
+      currentPrompt: reflectionPrompts[currentPromptIndex],
+      promptIndex: currentPromptIndex,
+      totalPrompts: reflectionPrompts.length,
+    };
+
+    // Prepare LLM variables with setup info
+    const llmVariables = {
+      ...setupInfo,
+      current_prompt: reflectionPrompts[currentPromptIndex],
+      prompt_progress: `${currentPromptIndex + 1}/${reflectionPrompts.length}`,
+    };
+
+    console.log('Starting call with LLM variables:', llmVariables);
+
+    const result = await startRetellCall(JOURNAL_AGENT_ID, metadata, llmVariables);
+    
+    if (!result.success) {
+      console.error('Failed to start Retell call');
+      setIsRecording(false);
+      return;
+    }
   };
 
   const handleStopRecording = () => {
+    console.log("Stopping recording...");
     setIsRecording(false);
+    stopRetellCall();
   };
 
   const formatDate = (date: Date) => {

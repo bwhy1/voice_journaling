@@ -4,7 +4,7 @@ import { AuroraBackground } from "../components/ui/aurora-background";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ChevronLeft, Calendar, Save } from "lucide-react";
+import { ChevronLeft, Calendar, Save, BarChart3, Users, Settings } from "lucide-react";
 import { RecordingButton } from "../components/ui/recording-button";
 
 // Define the prompts for reflection
@@ -82,11 +82,44 @@ export default function TodayPage() {
   return (
     <AuroraBackground>
       <div className="flex flex-col min-h-screen p-4 pt-8 pb-24">
+        {/* Navigation Bar */}
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center gap-2 bg-black/30 backdrop-blur-md border border-white/10 py-1 px-1 rounded-full shadow-lg">
+          <Link href="/today">
+            <button className="px-4 py-2 rounded-full bg-indigo-500 text-white flex items-center gap-1">
+              <span className="hidden md:inline">Today</span>
+            </button>
+          </Link>
+          <Link href="/calendar">
+            <button className="px-4 py-2 rounded-full text-white/80 hover:text-white flex items-center gap-1">
+              <Calendar size={16} />
+              <span className="hidden md:inline">Calendar</span>
+            </button>
+          </Link>
+          <Link href="/insights">
+            <button className="px-4 py-2 rounded-full text-white/80 hover:text-white flex items-center gap-1">
+              <BarChart3 size={16} />
+              <span className="hidden md:inline">Insights</span>
+            </button>
+          </Link>
+          <Link href="/relationships">
+            <button className="px-4 py-2 rounded-full text-white/80 hover:text-white flex items-center gap-1">
+              <Users size={16} />
+              <span className="hidden md:inline">Relationships</span>
+            </button>
+          </Link>
+          <Link href="/settings">
+            <button className="px-4 py-2 rounded-full text-white/80 hover:text-white flex items-center gap-1">
+              <Settings size={16} />
+              <span className="hidden md:inline">Settings</span>
+            </button>
+          </Link>
+        </div>
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-7xl mx-auto"
+          className="w-full max-w-7xl mx-auto mt-16"
         >
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
@@ -99,12 +132,7 @@ export default function TodayPage() {
             <h1 className="text-2xl md:text-4xl font-bold text-white text-center drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
               Today's Journal
             </h1>
-            <Link href="/calendar">
-              <button className="bg-black/40 hover:bg-black/50 text-white rounded-full px-4 py-2 flex items-center space-x-2 transition-all">
-                <Calendar size={16} />
-                <span>Calendar</span>
-              </button>
-            </Link>
+            <div className="w-24"></div> {/* Spacer for alignment */}
           </div>
 
           <div className="text-center mb-6">

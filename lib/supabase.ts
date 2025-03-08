@@ -16,3 +16,13 @@ export type JournalEntry = {
   content: string;
   user_id?: string;
 };
+
+// Type for user profile
+export type UserProfile = {
+  id?: string;
+  name: string;
+  goals: string;
+  challenges: string;
+  interests: string;
+  created_at?: string;
+};

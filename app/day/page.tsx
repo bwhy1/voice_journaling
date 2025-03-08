@@ -1,23 +1,32 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { format, parse, isValid, isToday } from 'date-fns';
-import { supabase } from '@/lib/supabase';
-import { JournalEntry } from '@/lib/supabase';
-import VoiceRecorder from '../components/VoiceRecorder';
+import type { JournalEntry } from '@/lib/supabase';
 import JournalEntryDisplay from '../components/JournalEntryDisplay';
-import { ChevronLeft, Plus, X } from 'lucide-react';
+import { ChevronLeft, Edit } from 'lucide-react';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
 
-export default function DayPage() {
-  const searchParams = useSearchParams();
-  const dateParam = searchParams.get('date');
+type Props = {
+  searchParams: { date?: string };
+};
 
-  const [date, setDate] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
-  const [entry, setEntry] = useState<JournalEntry | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [showRecorder, setShowRecorder] = useState<boolean>(false);
+export default async function DayPage({ searchParams }: Props) {
+  const { date: dateParam } = searchParams;
+
+  // Default to today's date if no date is provided
+  const today = format(new Date(), 'yyyy-MM-dd');
+  const date = dateParam || today;
+
+  // Check if the current date is today
+  const isCurrentDateToday = () => {
+    const parsedDate = parse(date, 'yyyy-MM-dd', new Date());
+    return isValid(parsedDate) && isToday(parsedDate);
+  };
+
+  // If it's today with no specific request for today's date, redirect to record page
+  if (isCurrentDateToday() && !dateParam) {
+    redirect('/record');
+  }
 
   // Format date for display
   const formatDisplayDate = (dateString: string) => {
@@ -27,94 +36,19 @@ export default function DayPage() {
 
   const displayDate = formatDisplayDate(date);
 
-  // Check if the current date is today
-  const isCurrentDateToday = () => {
-    const parsedDate = parse(date, 'yyyy-MM-dd', new Date());
-    return isValid(parsedDate) && isToday(parsedDate);
-  };
+  // Create a Supabase client for server-side operations
+  const supabase = await createClient();
 
-  // Fetch entry for the given date
-  useEffect(() => {
-    async function fetchJournalEntry() {
-      setIsLoading(true);
+  // Fetch journal entry
+  const { data: entry, error } = await supabase
+    .from('journal_entries')
+    .select('*')
+    .eq('entry_date', date)
+    .single();
 
-      // Parse and validate the date from URL params
-      if (dateParam) {
-        try {
-          const parsedDate = parse(dateParam, 'yyyy-MM-dd', new Date());
-          if (isValid(parsedDate)) {
-            setDate(dateParam);
-          }
-        } catch (error) {
-          console.error('Invalid date format:', error);
-        }
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('journal_entries')
-          .select('*')
-          .eq('entry_date', date)
-          .single();
-
-        if (error && error.code !== 'PGRST116') {
-          console.error('Error fetching journal entry:', error);
-        }
-
-        setEntry(data as JournalEntry);
-
-        // If it's today and there's no entry, show the recorder automatically
-        if (isCurrentDateToday() && !data) {
-          setShowRecorder(true);
-        }
-      } catch (error) {
-        console.error('Error fetching journal entry:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchJournalEntry();
-  }, [date, dateParam]);
-
-  // Save a new journal entry
-  const handleSaveEntry = async (content: string) => {
-    try {
-      const newEntry = {
-        entry_date: date,
-        content,
-        created_at: new Date().toISOString(),
-      };
-
-      // Check if entry already exists
-      if (entry) {
-        // Update existing entry
-        const { error } = await supabase
-          .from('journal_entries')
-          .update({ content })
-          .eq('id', entry.id);
-
-        if (error) throw error;
-
-        setEntry({ ...entry, content });
-      } else {
-        // Insert new entry
-        const { data, error } = await supabase
-          .from('journal_entries')
-          .insert([newEntry])
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        setEntry(data as JournalEntry);
-      }
-
-      setShowRecorder(false);
-    } catch (error) {
-      console.error('Error saving journal entry:', error);
-    }
-  };
+  if (error && error.code !== 'PGRST116') {
+    console.error('Error fetching journal entry:', error);
+  }
 
   return (
     <div className='flex flex-col min-h-screen bg-white dark:bg-gray-900'>
@@ -127,29 +61,28 @@ export default function DayPage() {
 
         <h1 className='text-lg font-semibold text-center flex-1 mx-2 truncate'>{displayDate}</h1>
 
-        {entry && (
-          <button
-            onClick={() => setShowRecorder(!showRecorder)}
+        {isCurrentDateToday() && (
+          <Link
+            href='/record'
             className='inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400'
-            aria-label={showRecorder ? 'Cancel recording' : 'New recording'}
+            aria-label="Edit today's entry"
           >
-            {showRecorder ? <X size={16} /> : <Plus size={16} />}
-          </button>
+            <Edit size={16} />
+          </Link>
         )}
 
-        {/* Spacer when there's no entry, to keep the header balanced */}
-        {!entry && <div className='w-8' />}
+        {!isCurrentDateToday() && <div className='w-8' />}
       </header>
 
       {/* Main content */}
       <main className='flex-1 p-4'>
-        {showRecorder ? (
-          <div className='flex flex-col h-[calc(100vh-8rem)]'>
-            <VoiceRecorder date={displayDate} onSave={handleSaveEntry} />
-          </div>
-        ) : (
-          <JournalEntryDisplay entry={entry} date={displayDate} isLoading={isLoading} />
-        )}
+        <JournalEntryDisplay
+          entry={entry as JournalEntry | null}
+          date={displayDate}
+          isLoading={false}
+          onStartRecording={isCurrentDateToday() ? undefined : undefined}
+          isToday={isCurrentDateToday()}
+        />
       </main>
     </div>
   );

@@ -1,11 +1,7 @@
 import Link from 'next/link';
-import { format } from 'date-fns';
 import { Book, PenSquare } from 'lucide-react';
 
 export default function Home() {
-  // Get today's date in the format YYYY-MM-DD
-  const today = format(new Date(), 'yyyy-MM-dd');
-
   return (
     <div className='grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]'>
       <main className='flex flex-col gap-[32px] row-start-2 items-center sm:items-start w-full max-w-3xl'>
@@ -17,7 +13,7 @@ export default function Home() {
 
             <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
               <Link
-                href={`/day?date=${today}`}
+                href='/record'
                 className='flex items-center gap-3 p-4 border rounded-md hover:bg-gray-50 dark:hover:bg-gray-900 transition-colors'
               >
                 <div className='p-3 bg-blue-100 dark:bg-blue-900 rounded-full'>
